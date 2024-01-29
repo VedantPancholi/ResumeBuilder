@@ -9,6 +9,7 @@ export const AuthButtonWithProvider = ({Icon, label, provider}) => {
     const handleClick = async () => {
         switch(provider) {
             case "GoogleAuthProvider":
+
                 console.log("Inside the Google Auth");
                 await signInWithRedirect(auth, googleAuthProvider).then((result) =>{
                     console.log(result);
