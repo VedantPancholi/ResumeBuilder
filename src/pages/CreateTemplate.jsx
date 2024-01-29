@@ -161,6 +161,7 @@ import { useNavigate } from 'react-router-dom';
         toast.success("Template deleted from Cloud")
         templatesReftch()
       }).catch((err) => {
+        
         toast.error(`Error : ${err.message}`);
       })
     });
@@ -195,7 +196,10 @@ import { useNavigate } from 'react-router-dom';
 
       {/* template title section */}
       <input className='w-full px-3 py-3 rounded-md bg-transparent border border-gray-300 text-lg text-txtPrimary focus:text-txtDark focus:shadow-md outline-none'
-      type='text' name='title' placeholder='Template Title' value={formData.title} onChange={handleInputChange} />
+      type='text' 
+      name='title' 
+      placeholder='Template Title' 
+      value={formData.title} onChange={handleInputChange} />
 
       {/* file uploader section */}
       <div className='w-full bg-gray-100 backdrop-blur-md h-[420px] lg:h-[620px] 2xl:h-[740px] rounded-md broder-2 border-dotted border-gray-300 cursor-pointer flex items-center justify-center'>
@@ -256,7 +260,10 @@ import { useNavigate } from 'react-router-dom';
         </div>
 
       {/* button action */}
-      <button type='button' className='w-full bg-blue-700 text-white rounded-md py-3' onClick={pushToCloud}>
+      <button 
+        type='button' 
+        className='w-full bg-blue-700 text-white rounded-md py-3' 
+        onClick={pushToCloud}>
         SAVE
       </button>
     </div>
