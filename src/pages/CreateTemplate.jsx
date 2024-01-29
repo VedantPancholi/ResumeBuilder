@@ -1,17 +1,19 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { FaTrash, FaUpload } from 'react-icons/fa6';
 import { PuffLoader } from 'react-spinners';
 import { toast } from 'react-toastify';
 
 import {deleteObject, getDownloadURL, getStorage, ref, uploadBytesResumable} from "firebase/storage"
-import { initialTags } from '../utils/helpers';
-import { useAsyncError } from 'react-router-dom';
-import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { adminIds, initialTags } from '../utils/helpers';
+// import { useAsyncError } from 'react-router-dom';
+import { deleteDoc, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import useTemplates from '../hooks/useTemplates';
-import { db } from '../config/firebase.config';
+import { db, storage } from '../config/firebase.config';
+import useUser from "../hooks/useUser";
+import { useNavigate } from 'react-router-dom';
 // import { storage } from "../config/firebase.config"
 
-const storage = getStorage();
+// const storage = getStorage();
 
  const CreateTemplate = () => {
   const[formData, setFormData] = useState({
@@ -21,11 +23,11 @@ const storage = getStorage();
 
   const [imageAsset, setImageAsset] = useState({
     isImageLoading : false,
-    imageURL : null,
+    uri : null,
     progress : 0,
   });
 
-  const [selectedTags, setSelectedTags] = useState(initialTags);
+  const [selectedTags, setSelectedTags] = useState([]);
 
   const {
     data : templates, 
@@ -34,11 +36,17 @@ const storage = getStorage();
     refetch: templatesReftch, 
   } = useTemplates();
 
+  const {data : user, isLoading} = useUser()
+
+  const navigate = useNavigate();
+
+// handling the input field change
   const handleInputChange = (e) => {
-    const  {name, value} = e.target;
+    const { name, value } = e.target;
     setFormData((prevRec) => ({ ...prevRec, [name] : value}));
   };
 
+  // file changes
   const handleFileSelect = async (e) => {
     setImageAsset((prevAsset) =>({ ...prevAsset, isImageLoading: true }))
     const file = e.target.files[0];
@@ -51,9 +59,12 @@ const storage = getStorage();
       const uploadTask = uploadBytesResumable(storageRef, file);
 
       uploadTask.on(
-        'state_changed',
+        "state_changed",
          (snapshot) => {
-            setImageAsset((prevAsset) => ({ ...prevAsset, progress : (snapshot.bytesTransferred / snapshot.totalBytes) * 100,}))
+            setImageAsset((prevAsset) => ({ 
+              ...prevAsset, 
+              progress : (snapshot.bytesTransferred / snapshot.totalBytes) * 100,
+            }));
          }, 
          (error) => {
           if(error.message.includes("storage/unauthorized")){
@@ -63,7 +74,7 @@ const storage = getStorage();
           }
          },
          () => {
-          getDownloadURL(uploadTask.snapshot.ref).then(downloadURL => {
+          getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
             // (snapshot) => {
               setImageAsset((prevAsset) => ({ 
                 ...prevAsset, 
@@ -74,7 +85,7 @@ const storage = getStorage();
          toast.success("Image Uploaded");
          setInterval(() => {
           setImageAsset((prevAsset) => ({ ...prevAsset, isImageLoading: false}));
-         }, 1000);
+         }, 2000);
 
         //  setTimeout(() => {
         //   setImageAsset((prevAsset) => ({ ...prevAsset, isImageLoading: false }));
@@ -87,30 +98,31 @@ const storage = getStorage();
   
   const delelteAnImageObject = async() => {
     // setImageAsset((prevAsset) =>({ ...prevAsset, isImageLoading: true }));
+    
+    setInterval(() => {
+      setImageAsset((prevAsset) => ({ 
+        ...prevAsset, 
+        progress: 0,
+        uri: null,
+        // isImageLoading: false, 
+      }));
+    }, 2000);
     const deleteRef = ref(storage, imageAsset.uri);
     deleteObject(deleteRef).then(() => {
-      toast.success("Image removed");
-      setInterval(() => {
-        setImageAsset((prevAsset) => ({ 
-          ...prevAsset, 
-          progress: 0,
-          uri: null,
-          // isImageLoading: false, 
-        }));
-      }, 1000);
-    })
-  }
+    toast.success("Image removed");
+    });
+  };
 
 
   const isAllowed = (file) => {
-    const allowedTypes  =["image/jpeg", ""]
-    return allowedTypes.includes(file.type)
+    const allowedTypes  =["image/jpeg", "image/jpg", "image/png"];
+    return allowedTypes.includes(file.type);
   };
 
   const handleSelectedTags = (tag) => {
     if(selectedTags.includes(tag)){
       //if selected than remove it
-      setSelectedTags(selectedTags.filter(selected => selected != tag));
+      setSelectedTags(selectedTags.filter(selected => selected !== tag));
     }else{
       setSelectedTags([...selectedTags, tag]);
     }
@@ -132,7 +144,7 @@ const storage = getStorage();
     console.log(_doc);
     await setDoc(doc(db, "templates", id), _doc).then(() => {
       setFormData((prevData) => ({...prevData, title: "", imageURL: ""}));
-      setFormData((prevAsset) => ({...prevAsset, uri: null}));
+      setImageAsset((prevAsset) => ({...prevAsset, uri: null}));
       setSelectedTags([]);
       templatesReftch();
       toast.success("Data pushed to the cloud");
@@ -142,7 +154,23 @@ const storage = getStorage();
 
   };
 
+  const removeTemplate = async(template) => {
+    const deleteRef = ref(storage, template?.imageURL)
+    await deleteObject(deleteRef).then(async() => {
+      await deleteDoc(doc(db, "templates", template?._id)).then(() => {
+        toast.success("Template deleted from Cloud")
+        templatesReftch()
+      }).catch((err) => {
+        toast.error(`Error : ${err.message}`);
+      })
+    });
+  };
 
+  useEffect(() => {
+    if (!isLoading && !adminIds.includes(user?.uid)) {
+      navigate("/", { replace: true });
+    }
+  }, [user, isLoading]);
 
   return (
     <div className='w-full px-4 lg:px-10 2xl:px-32 py-4 grid grod-col-4 lg:grid-cols-12'>
@@ -153,17 +181,17 @@ const storage = getStorage();
         <p className='text-lg text-txtPrimary'>Create a New Template</p>
       </div>
 
-      {/* template id section */}
-      <div className='w-full flex items-center justify-end'>
-        <p className='text-base text-txtLight uppercase font-semibold'>
-        TempID :{" "}
-        </p>
-        <p className='text-sm text-txtDark capitalized font-bold'>
-          {templates && templates.length > 0 
-          ? `Template${templates.length}` 
-          : "Template1"}
-        </p>
-      </div>
+      {/*template ID section */}
+      <div className="w-full flex items-center justify-end">
+          <p className="text-base text-txtLight uppercase font-semibold">
+            TempId :{" "}
+          </p>
+          <p className="text-sm text-txtDark capitalize font-bold">
+            {templates && templates.length > 0
+              ? `Template${templates.length + 1}`
+              : "Template1"}
+          </p>
+        </div>
 
       {/* template title section */}
       <input className='w-full px-3 py-3 rounded-md bg-transparent border border-gray-300 text-lg text-txtPrimary focus:text-txtDark focus:shadow-md outline-none'
@@ -196,7 +224,9 @@ const storage = getStorage();
             ) : (
               <React.Fragment>
                 <div className='relative w-full h-full overflow-hidden rounded-md '>
-                  <img src={imageAsset?.uri} className='w-full h-full object-cover' loading='lazy' alt=''></img>
+                  <img src={imageAsset?.uri} 
+                  className='w-full h-full object-cover' 
+                  loading='lazy' alt=''></img>
 
                   {/* delete image section */}
                   <div className='absolute top-4 right-4 w-8 h-8 rounded-md flex items-center justify-center bg-red-400 cursor-pointer' onClick={delelteAnImageObject}>
@@ -211,16 +241,19 @@ const storage = getStorage();
 
       {/* tag list */}
 
-      <div className='w-full flex items-center flex-wrap gap-2'>
-        {initialTags.map((tag, i) => (
-          <div key={i} 
-          className={`border border-gray-300 px-2 py-1 rounded-md cursor-pointer ${
-            selectedTags.includes(tag) ? "bg-blue-500 text-white" : ""}`} 
-          onClick={() => handleSelectedTags(tag)}> 
-            <p className='text-xs'> {tag} </p>
-          </div>
-        ))}
-      </div>
+      <div className="w-full flex items-center flex-wrap gap-2">
+          {initialTags.map((tag, i) => (
+            <div
+              key={i}
+              className={`border border-gray-300 px-2 py-1 rounded-md cursor-pointer ${
+                selectedTags.includes(tag) ? "bg-blue-700 text-white" : ""
+              }`}
+              onClick={() => handleSelectedTags(tag)}
+            >
+              <p className="text-xs">{tag}</p>
+            </div>
+          ))}
+        </div>
 
       {/* button action */}
       <button type='button' className='w-full bg-blue-700 text-white rounded-md py-3' onClick={pushToCloud}>
@@ -238,27 +271,43 @@ const storage = getStorage();
               </React.Fragment>
             ) : (
               <React.Fragment>
-                {templates && templates.length > 0 ? (
-                  <React.Fragment>
-                    <div className='w-full h-full grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-4 gap-4'>
-                    {templates?.map((template) => {
-                      <div key={template._id} className='w-full h-[500px] rounded-md overflow-hidden relative'>
-                        <img src={template?.imageURL} alt='' className='w-full h-full object-cover' />
+            {templates && templates.length > 0 ? (
+              <React.Fragment>
+                <div className="w-full h-full grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-4 gap-4">
+                  {templates?.map((template) => (
+                    <div
+                      key={template._id}
+                      className="w-full h-[500px] rounded-md overflow-hidden relative"
+                    >
+                      <img
+                        src={template?.imageURL}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+
+                      <div
+                        className="absolute top-4 right-4 h-8 w-8 rounded-md flex items-center justify-center bg-red-500 cursor-pointer"
+                        onClick={() => removeTemplate(template)}
+                      >
+                        <FaTrash className="text-sm text-white"></FaTrash>
                       </div>
-                    })}
                     </div>
-                  </React.Fragment>
-                ) : (
-                  <React.Fragment>
-                    <div className='w-full h-full flex items-center justify-center'>
-                      <PuffLoader color='#498FCD' size={40}/>
-                      <p className='text-xl tracking-wider capitalize text-txtPrimary'>No data</p>
-                    </div>
-                  </React.Fragment>
-                )}
+                  ))}
+                </div>
+              </React.Fragment>
+            ) : (
+              <React.Fragment>
+                <div className="w-full h-full flex flex-col items-center justify-center">
+                  <PuffLoader color="#498FCD" size={40} />
+                  <p className="text-xl tracking-wider capitalize text-txtPrimary">
+                    No data
+                  </p>
+                </div>
               </React.Fragment>
             )}
-    </div>
+          </React.Fragment>
+            )}
+      </div>
     </div>
   )
 }
