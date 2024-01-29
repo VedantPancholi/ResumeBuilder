@@ -161,6 +161,7 @@ import { useNavigate } from 'react-router-dom';
         toast.success("Template deleted from Cloud")
         templatesReftch()
       }).catch((err) => {
+        
         toast.error(`Error : ${err.message}`);
       })
     });
