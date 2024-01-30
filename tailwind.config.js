@@ -12,6 +12,8 @@ module.exports = {
       bgPrimary: "#f1f1f1",
     },},
   },
-  plugins: [],
+  plugins: [
+    require('tailwind-scrollbar'),
+  ],
 }
 
