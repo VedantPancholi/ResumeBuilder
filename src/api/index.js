@@ -1,5 +1,6 @@
-import { collection, doc, onSnapshot, orderBy, query, setDoc } from "firebase/firestore"
+import { arrayUnion, collection, doc, onSnapshot, orderBy, query, setDoc, updateDoc } from "firebase/firestore"
 import { auth, db } from "../config/firebase.config"
+import { toast } from "react-toastify";
 
 export const getUserDetail = async () => {
     return new Promise((resolve, reject) => { // Include 'reject' as a parameter
@@ -47,3 +48,18 @@ export const getTemplates = () => {
     
 }
 
+export const saveToCollections = async (user, data ) => {
+    if(!user?.collections?.includes(data?._id)){
+        const docRef = doc(db, "users", user?.uid)
+
+        await updateDoc(docRef, {
+            collections: arrayUnion(data?._id),
+        }).then(() => toast.success("Saved to Collections")).catch((err) => toast.error(`Error : ${err.message}`));
+    }else{
+        const docRef = doc(db, "users", user?.uid)
+
+        await updateDoc(docRef, {
+            collections: arrayUnion(data?._id),
+        }).then(() => toast.success("Removed from Collections")).catch((err) => toast.error(`Error : ${err.message}`));
+    }
+}

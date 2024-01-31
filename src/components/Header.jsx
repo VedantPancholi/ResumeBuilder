@@ -25,19 +25,19 @@ const Header = () => {
     });
   };
 
-  // const handleSearchTerm = (e) => {
-  //   queryClient.setQueryData("globalFilter",{
-  //     ...queryClient.getQueryData("globalFilter"),
-  //     searchTerm: e.target.value,
-  //   });
-  // };
-  const handleSearchTerm = ({ target: { value } }) => {
-    queryClient.setQueryData("globalFilter", {
-      ...(queryClient.getQueryData("globalFilter") || {}),
-      searchTerm: value,
+  const handleSearchTerm = (e) => {
+    queryClient.setQueryData("globalFilter",{
+      ...queryClient.getQueryData("globalFilter"),
+      searchTerm: e.target.value,
     });
-    // console.log(searchTerm);
   };
+//   const handleSearchTerm = ({ target: { value } }) => {
+//     queryClient.setQueryData("globalFilter", {
+//       ...(queryClient.getQueryData("globalFilter") || {}),
+//       searchTerm: value,
+//     });
+//     // console.log(searchTerm);
+//   };
   
   const clearFilter = () => {
     queryClient.setQueryData("globalFilter",{
@@ -53,15 +53,14 @@ const Header = () => {
 
       {/* input */}
       <div className='flex-1 border border-gray-300 px-4 py-1 rounded-md flex items-center justify-between bg-gray-200'>
-        <input
-          value={filterData?.searchTerm || ""}
-          onChange={handleSearchTerm}
-          type='text'
-          placeholder='Search here...'
-          className='flex-1 h-10 bg-transparent text-base font-semibold outline-none border-none'
-        />
+      <input
+      value={filterData?.searchTerm ? filterData?.searchTerm : ""}
+      onChange={handleSearchTerm}
+      placeholder='Search here...'
+      className='flex-1 h-10 bg-transparent text-base font-semibold outline-none border-none'
+  />
         <AnimatePresence>
-          {filterData.searchTerm.length > 0 
+          {filterData && filterData.searchTerm.length > 0 
           && (
             <motion.div 
             onClick={clearFilter}
