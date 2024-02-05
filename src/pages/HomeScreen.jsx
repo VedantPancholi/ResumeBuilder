@@ -16,15 +16,7 @@ import { CreateResume, CreateTemplate, TemplateDesignPinDetails, UserProfile } f
         <Route path='/template/create' element={<CreateTemplate />} /> 
         <Route path='/profile/:uid' element={<UserProfile />} /> 
         <Route path='/resume/*' element={<CreateResume />} /> 
-        <Route path='/resumeDetail/templateID' element={<TemplateDesignPinDetails />} />
-        
-        
-        {/* <Route path="/" element={<HomeContainer />} />
-        <Route path="/template/create" element={<CreateTemplate />} />
-        <Route path="/profile/:uid" element={<UserProfile />} />
-        <Route path="/resume/*" element={<CreateResume />} />
-        <Route path="/resumeDetail/:templateID" element={<TemplateDesignPinDetails />} /> */}
-
+        <Route path='/resumeDetail/:templateID' element={<TemplateDesignPinDetails />} />
         </Routes>
       </Suspense>
     </main>
