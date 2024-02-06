@@ -56,7 +56,7 @@ import { AnimatePresence } from 'framer-motion';
     </div>
 
     {/* design main section layout */}
-    <div className='w-full grid grid-cols-1 lg:grid-cols-12'>
+    <div className='w-full grid grid-cols-1 lg:grid-cols-12'> 
       {/* left section */}
       <div className='col-span-1 lg:col-span-8 flex flex-col items-start justify-start gap-4 '>
         {/* load the template image */}
@@ -168,7 +168,9 @@ import { AnimatePresence } from 'framer-motion';
     {/* here i check the template and shows templates apart from that id */}
     {templates?.filter((temp) => temp._id !== data?._id)?.length > 0 && (
       <div className='w-full py-8 flex flex-col items-start justify-start gap-4'>
-        <p className='text-lg font-semibold text-txtDark'>You might also like</p>
+        <p className='text-lg font-semibold text-txtDark'>
+          You might also like
+        </p>
 
         <div className='w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-2'>
         <React.Fragment>
