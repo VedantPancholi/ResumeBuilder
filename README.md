@@ -1,7 +1,6 @@
 # Getting Started with Create React App
 
-Our Team :
-Vedant Pancholi
+My Team Member:
 Sachin Parmar
 
 ## Available Scripts
